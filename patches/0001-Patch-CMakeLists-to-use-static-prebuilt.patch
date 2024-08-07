@@ -1,0 +1,88 @@
+From e18e2b8ddb0575ea5822276cdc32f4e00c1937f3 Mon Sep 17 00:00:00 2001
+From: Rye Mutt <rye@alchemyviewer.org>
+Date: Wed, 7 Aug 2024 14:19:08 -0400
+Subject: [PATCH] Patch CMakeLists to use static prebuilt
+
+---
+ CMakeLists.txt | 30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ad3f2427d..89b828ce1 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -97,15 +97,17 @@ option(PNG_HARDWARE_OPTIMIZATIONS "Enable hardware optimizations" ON)
+ option(PNG_BUILD_ZLIB "Custom zlib location, else find_package is used" OFF)
+ if(NOT PNG_BUILD_ZLIB)
+   find_package(ZLIB REQUIRED)
+-elseif(POLICY CMP0074)
+-  if("x${ZLIB_ROOT}" STREQUAL "x")
+-    message(DEPRECATION
+-            "The option PNG_BUILD_ZLIB has been deprecated; please use ZLIB_ROOT instead")
+-  else()
+-    message(SEND_ERROR
+-            "The option PNG_BUILD_ZLIB=${PNG_BUILD_ZLIB} and "
+-            "the variable ZLIB_ROOT=\"${ZLIB_ROOT}\" are mutually exclusive")
+-  endif()
++#elseif(POLICY CMP0074)
++#  if("x${ZLIB_ROOT}" STREQUAL "x")
++#    message(DEPRECATION
++#            "The option PNG_BUILD_ZLIB has been deprecated; please use ZLIB_ROOT instead")
++#  else()
++#    message(SEND_ERROR
++#            "The option PNG_BUILD_ZLIB=${PNG_BUILD_ZLIB} and "
++#            "the variable ZLIB_ROOT=\"${ZLIB_ROOT}\" are mutually exclusive")
++#  endif()
++else()
++  include_directories(${ZLIB_INCLUDE_DIRS})
+ endif()
+ 
+ if(UNIX AND NOT APPLE AND NOT BEOS AND NOT HAIKU AND NOT EMSCRIPTEN)
+@@ -189,7 +191,7 @@ if(TARGET_ARCH MATCHES "^(powerpc|ppc64)")
+ endif()
+ 
+ # Set definitions and sources for Intel.
+-if(TARGET_ARCH MATCHES "^(i[3-6]86|x86|AMD64)")
++if(TARGET_ARCH MATCHES "^(i[3-6]86|x86|x86_64|AMD64)")
+   set(PNG_INTEL_SSE_POSSIBLE_VALUES on off)
+   set(PNG_INTEL_SSE "on"
+       CACHE STRING "Enable INTEL_SSE optimizations: on|off; on is default")
+@@ -716,7 +718,7 @@ if(PNG_SHARED)
+                              PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+   target_include_directories(png_shared SYSTEM
+                              INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libpng${PNGLIB_ABI_VERSION}>)
+-  target_link_libraries(png_shared PUBLIC ZLIB::ZLIB ${M_LIBRARY})
++  target_link_libraries(png_shared PUBLIC ${ZLIB_LIBRARIES} ${M_LIBRARY})
+ endif()
+ 
+ if(PNG_STATIC)
+@@ -730,7 +732,7 @@ if(PNG_STATIC)
+                              PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+   target_include_directories(png_static SYSTEM
+                              INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libpng${PNGLIB_ABI_VERSION}>)
+-  target_link_libraries(png_static PUBLIC ZLIB::ZLIB ${M_LIBRARY})
++  target_link_libraries(png_static PUBLIC ${ZLIB_LIBRARIES} ${M_LIBRARY})
+ endif()
+ 
+ if(PNG_FRAMEWORK AND NOT APPLE)
+@@ -759,7 +761,7 @@ if(PNG_FRAMEWORK)
+                              PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+   target_include_directories(png_framework SYSTEM
+                              INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libpng${PNGLIB_ABI_VERSION}>)
+-  target_link_libraries(png_framework PUBLIC ZLIB::ZLIB ${M_LIBRARY})
++  target_link_libraries(png_framework PUBLIC ${ZLIB_LIBRARIES} ${M_LIBRARY})
+ endif()
+ 
+ if(NOT PNG_LIBRARY_TARGETS)
+@@ -964,7 +966,7 @@ if(PNG_SHARED AND PNG_TOOLS)
+   set(PNG_BIN_TARGETS pngfix)
+ 
+   add_executable(png-fix-itxt ${png_fix_itxt_sources})
+-  target_link_libraries(png-fix-itxt PRIVATE ZLIB::ZLIB ${M_LIBRARY})
++  target_link_libraries(png-fix-itxt PRIVATE ${ZLIB_LIBRARIES} ${M_LIBRARY})
+   list(APPEND PNG_BIN_TARGETS png-fix-itxt)
+ endif()
+ 
+-- 
+2.45.2.windows.1
+
